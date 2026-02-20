@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from .database import engine, get_db 
 from . import models, schemas
 from .schemas import TrainersListResponse
-from .security import hash_password
+from .security import hash_password, verify_password
 
 
 models.Base.metadata.create_all(bind=engine)
@@ -61,3 +61,22 @@ def get_trainers(
         "size": size,
         "items": Trainers
     }
+
+#POST /auth/login to verify user 
+################################
+
+@app.post("/auth/login", response_model=schemas.LoginResponse)
+def login(data: schemas.LoginRequest, db: Session = Depends(get_db)):
+    #Search User by Email
+    trainer = db.query(models.Trainer).filter(models.Trainer.email == data.email).first()
+
+    #Don't exist ERROR
+    if not trainer:
+        raise HTTPException(status_code=401, detail="Email invalido")
+    
+    #verify PASSWORD
+    if not verify_password(data.password, trainer.password_hash):
+        raise HTTPException(status_code=401, detail="Clave invalida")
+    
+    #OK
+    return {"message": "Inicio de sesión exitosa"}
