@@ -23,3 +23,10 @@ class TrainersListResponse(BaseModel):
     page: int
     size: int
     items: List[TrainerResponse]
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+class LoginResponse(BaseModel):
+    message: str
