@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from .database import engine, get_db 
 from . import models, schemas
 from .schemas import TrainersListResponse
-from .security import hash_password, verify_password
+from .security import hash_password, verify_password, get_current_user
 
 
 models.Base.metadata.create_all(bind=engine)
@@ -80,3 +80,10 @@ def login(data: schemas.LoginRequest, db: Session = Depends(get_db)):
     
     #OK
     return {"message": "Inicio de sesión exitosa"}
+
+#GET PROFILE
+############
+
+@app.get("/profile")
+def read_profile(current_user: str = Depends(get_current_user)):
+    return{"message": f"Bienvenido {current_user}"}
