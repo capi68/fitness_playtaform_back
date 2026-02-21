@@ -30,3 +30,8 @@ class LoginRequest(BaseModel):
 
 class LoginResponse(BaseModel):
     message: str
+
+class ClientCreate(BaseModel):
+    name: str
+    age: int
+    goal: str

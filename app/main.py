@@ -86,7 +86,7 @@ def login(
 
     return {
         "access_token": access_token,
-        "token_tipé": "bearer"
+        "token_type": "bearer"
     }
 
 #GET PROFILE
@@ -95,3 +95,33 @@ def login(
 @app.get("/profile")
 def read_profile(current_user: str = Depends(get_current_user)):
     return{"message": f"Bienvenido {current_user.name}"}
+
+#POST /clients
+
+@app.post("/clients")
+def create_client(
+    client: schemas.ClientCreate,
+    db: Session = Depends(get_db),
+    current_user: models.Trainer = Depends(get_current_user)
+):
+    new_client = models.Client(
+        name=client.name,
+        age=client.age,
+        goal=client.goal,
+        trainer_id=current_user.id
+    )
+
+    db.add(new_client)
+    db.commit()
+    db.refresh(new_client)
+
+    return new_client
+
+#GET /clients
+#################
+
+@app.get("/clients")
+def get_my_clients(
+    current_user: models.Trainer = Depends(get_current_user)
+): 
+    return current_user.clients

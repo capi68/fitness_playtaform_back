@@ -1,7 +1,7 @@
 import os 
 from passlib.context import CryptContext
 from jose import JWTError, jwt 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
@@ -41,7 +41,7 @@ def create_access_token(data: dict):
     to_encode = data.copy()
 
     #Expiration claim
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
 
     #Encode token with secret key
