@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 from .database import engine, get_db 
 from . import models, schemas
 from .schemas import TrainersListResponse
-from .security import hash_password, verify_password, get_current_user
+from .security import hash_password, verify_password, get_current_user, create_access_token
+from fastapi.security import OAuth2PasswordRequestForm
 
 
 models.Base.metadata.create_all(bind=engine)
@@ -65,25 +66,32 @@ def get_trainers(
 #POST /auth/login to verify user 
 ################################
 
-@app.post("/auth/login", response_model=schemas.LoginResponse)
-def login(data: schemas.LoginRequest, db: Session = Depends(get_db)):
+@app.post("/auth/login")
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(), 
+    db: Session = Depends(get_db)
+):
     #Search User by Email
-    trainer = db.query(models.Trainer).filter(models.Trainer.email == data.email).first()
+    trainer = db.query(models.Trainer).filter(models.Trainer.email == form_data.username).first()
 
     #Don't exist ERROR
     if not trainer:
         raise HTTPException(status_code=401, detail="Email invalido")
     
     #verify PASSWORD
-    if not verify_password(data.password, trainer.password_hash):
+    if not verify_password(form_data.password, trainer.password_hash):
         raise HTTPException(status_code=401, detail="Clave invalida")
     
-    #OK
-    return {"message": "Inicio de sesión exitosa"}
+    access_token = create_access_token( data={"sub": trainer.email})
+
+    return {
+        "access_token": access_token,
+        "token_tipé": "bearer"
+    }
 
 #GET PROFILE
 ############
 
 @app.get("/profile")
 def read_profile(current_user: str = Depends(get_current_user)):
-    return{"message": f"Bienvenido {current_user}"}
+    return{"message": f"Bienvenido {current_user.name}"}

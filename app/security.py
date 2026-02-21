@@ -5,10 +5,12 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
-
+from sqlalchemy.orm import Session
+from .database import get_db
+from .models import Trainer
 
 load_dotenv()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 #JWT 
 ##########
@@ -49,7 +51,7 @@ def create_access_token(data: dict):
 #DECODE TOKEN
 #############
 
-def deconde_access_token(token: str):
+def decode_access_token(token: str):
     try: 
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
@@ -59,14 +61,25 @@ def deconde_access_token(token: str):
             detail="Invalid or expired token"
         )
     
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    payload = deconde_access_token(token)
+def get_current_user(
+        token: str = Depends(oauth2_scheme),
+        db: Session =  Depends(get_db)
+):
+    payload = decode_access_token(token)
     user_email = payload.get("sub")
 
     if user_email is None:
         raise HTTPException(
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token payload"
         )
     
-    return user_email
+    user = db.query(Trainer).filter(Trainer.email == user_email).first()
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+    
+    return user
