@@ -35,3 +35,8 @@ class ClientCreate(BaseModel):
     name: str
     age: int
     goal: str
+
+class ClientUpdate(BaseModel):
+    name: str
+    age: int
+    goal: str

@@ -22,6 +22,7 @@ class Client(Base):
     name = Column(String, nullable=False)
     age = Column(Integer)
     goal = Column(String)
+    is_active = Column(Boolean, default=True, nullable=False)
 
     trainer_id = Column(Integer, ForeignKey("trainers.id"))
 
