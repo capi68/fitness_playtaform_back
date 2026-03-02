@@ -2,11 +2,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base, Session
 from fastapi import Depends
 
-DATA_BASE_URL = "sqlite:///./fitness_proyect.db"
+DATA_BASE_URL = "postgresql+psycopg2://postgres:18566429@localhost:5432/fitness_platform"
 
-engine = create_engine(
-    DATA_BASE_URL, connect_args={"check_same_thread": False}
-)
+engine = create_engine(DATA_BASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

@@ -3,23 +3,22 @@ from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from .database import engine, get_db 
 from . import models, schemas
-from .schemas import TrainersListResponse,  ClientUpdate
+from .schemas import TrainersListResponse,  ClientUpdate, ClientResponse
 from .security import hash_password, verify_password, get_current_user, create_access_token
 from fastapi.security import OAuth2PasswordRequestForm
 
 
-models.Base.metadata.create_all(bind=engine)
-
 app = FastAPI(title="Fitness Plataform API")
 
-
+######################
 #GET Endpoint Inicial
-###################
+######################
 
 @app.get("/")
 def read_root():
     return {"message": "fitness Plataform API is running"}
 
+##################################
 #POST  Endpoint To Upload Trainers
 ##################################
 
@@ -38,6 +37,7 @@ def create_trainer(trainer: schemas.TrainerCreate, db: Session = Depends(get_db)
 
     return db_trainer
 
+#####################################
 #GET Endpoint to obtain Trainers list
 #####################################
 
@@ -63,6 +63,7 @@ def get_trainers(
         "items": Trainers
     }
 
+################################
 #POST /auth/login to verify user 
 ################################
 
@@ -89,16 +90,19 @@ def login(
         "token_type": "bearer"
     }
 
+##################
 #GET PROFILE
-############
+##################
 
-@app.get("/profile")
+@app.get("/profile", response_model=schemas.TrainerResponse)
 def read_profile(current_user: str = Depends(get_current_user)):
-    return{"message": f"Bienvenido {current_user.name}"}
+    return current_user
 
+#################
 #POST /clients
+#################
 
-@app.post("/clients")
+@app.post("/clients", response_model=schemas.ClientResponse, status_code=201)
 def create_client(
     client: schemas.ClientCreate,
     db: Session = Depends(get_db),
@@ -117,10 +121,11 @@ def create_client(
 
     return new_client
 
+#################
 #GET /clients
 #################
 
-@app.get("/clients")
+@app.get("/clients", response_model=List[schemas.ClientResponse])
 def get_my_clients(
     current_user: models.Trainer = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -132,10 +137,11 @@ def get_my_clients(
     ).all()
     return clients
 
+############################
 #GET /clients/{client_id}
 ############################
 
-@app.get("/clients/{client_id}")
+@app.get("/clients/{client_id}", response_model=schemas.ClientResponse)
 def client_by_id(
     client_id: int,
     current_user: models.Trainer = Depends(get_current_user),
@@ -152,10 +158,11 @@ def client_by_id(
     
     return client
 
+###########################
 #PUT /clients/{client_id}
 ###########################
 
-@app.put("/clients/{client_id}")
+@app.put("/clients/{client_id}", response_model=schemas.ClientResponse)
 def update_client(
     client_id: int,
     client_update: schemas.ClientUpdate,
@@ -180,10 +187,11 @@ def update_client(
 
     return client
 
+################################
 #DELETE /clientes/{client_id}
 ################################
 
-@app.delete("/clients/{client_id}")
+@app.delete("/clients/{client_id}", status_code=200)
 def delete_client(
     client_id: int,
     current_user: models.Trainer = Depends(get_current_user),
@@ -203,4 +211,210 @@ def delete_client(
 
     return {"detail": "Cliente desactivado correctamente"}
 
+###################################
+#PATCH /clients/{client_id}/restore
+###################################
+
+@app.patch("/clients/{client_id}/restore", response_model=schemas.ClientResponse)
+def restore_client(
+    client_id: int,
+    current_user: models.Trainer = Depends(get_current_user),
+    db: Session = Depends(get_db) 
+):
+    client = db.query(models.Client).filter(
+        models.Client.id == client_id,
+        models.Client.trainer_id == current_user.id,
+        models.Client.is_active == False
+    ).first()
+
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    
+    client.is_active = True
+    db.commit()
+    db.refresh(client)
+
+    return {"detail": "Cliente activado correctamente"}
+
+
+#########################
+#CRUDS WORKOUTS PLANS
+#########################
+
+########################################
+#POST /clients/{client_id}/workout-plans
+########################################
+
+@app.post("/clients/{client_id}/workout-plans", response_model=schemas.WorkoutPlanResponse, status_code=201)
+def create_workout_plan(
+    client_id: int,
+    workout_plan: schemas.WorkoutPlanCreate,
+    current_user: models.Trainer = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    client = db.query(models.Client).filter(
+        models.Client.id == client_id,
+        models.Client.trainer_id == current_user.id,
+        models.Client.is_active == True
+    ).first()
+
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    
+
+    new_workpout_plan = models.WorkoutPlan(
+        name=workout_plan.name,
+        description=workout_plan.description,
+        start_date=workout_plan.start_date,
+        end_date=workout_plan.end_date,
+        client_id=client_id
+    )
+
+    db.add(new_workpout_plan)
+    db.commit()
+    db.refresh(new_workpout_plan)
+
+    return new_workpout_plan
+
+########################################
+#GET /clients/{client_id}/workout-plans
+########################################
+
+@app.get("/clients/{client_id}/workout-plans", response_model=List[schemas.WorkoutPlanResponse])
+def workout_plan(
+    client_id: int,
+    current_user: models.Trainer = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+
+    client = db.query(models.Client).filter(
+        models.Client.id == client_id,
+        models.Client.trainer_id == current_user.id,
+        models.Client.is_active == True
+    ).first()
+
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    
+    workout_plans = db.query(models.WorkoutPlan).filter(
+        models.WorkoutPlan.client_id == client_id,
+        models.WorkoutPlan.is_active == True
+    ).all()
+
+    return workout_plans
+
+##################################
+#GET /workout-plans/{workout_id}
+##################################
+
+@app.get("/workout-plans/{workout_id}", response_model=schemas.WorkoutPlanResponse)
+def workout_plan(
+    workout_id: int,
+    current_user: models.Trainer = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    workout = db.query(models.WorkoutPlan).join(models.Client).filter(
+        models.WorkoutPlan.id == workout_id,
+        models.Client.trainer_id == current_user.id,
+        models.WorkoutPlan.is_active == True
+    ).first()
+
+    if not workout:
+        raise HTTPException(status_code=404, detail="Workout no encontrado")
+    
+    return workout
+
+######################
+#GET /workout-plans
+######################
+
+@app.get("/workout-plans", response_model=List[schemas.WorkoutPlanResponse])
+def get_all_workout_plans(
+    current_user: models.Trainer = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    workout_plans = db.query(models.WorkoutPlan).join(models.Client).filter(
+        models.Client.trainer_id == current_user.id,
+        models.WorkoutPlan.is_active == True
+    ).all()
+
+    return workout_plans
+
+################################
+#PUT /workout-plans/{workout_id}
+################################
+
+@app.put("/workout-plans/{workout_id}", response_model=List[schemas.WorkoutPlanResponse])
+def update_workout(
+    workout_id: int,
+    workout_update: schemas.WorkoutPlanUpdate,
+    current_user: models.Trainer = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    workout_plan = db.query(models.WorkoutPlan).join(models.Client).filter(
+        models.WorkoutPlan.id == workout_id,
+        models.Client.trainer_id == current_user.id,
+        models.Client.is_active == True,
+        models.WorkoutPlan.is_active == True
+    ).first()
+
+    if not workout_plan:
+        raise HTTPException(status_code=404, detail="Workout plan no encontrado")
+    
+    for key, value in workout_update.model_dump(exclude_unset=True).items():
+        setattr(workout_plan, key, value)
+
+    db.commit()
+    db.refresh(workout_plan)
+    
+    return workout_plan
+
+###################################
+#DELETE /workout-plans/{workout_id} (soft delete)
+###################################
+
+@app.delete("/workout-plans/{workout_id}", response_model=schemas.WorkoutPlanResponse)
+def delete_workout(
+    workout_id: int,
+    current_user: models.Trainer = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    workout = db.query(models.WorkoutPlan).join(models.Client).filter(
+        models.WorkoutPlan.id == workout_id,
+        models.Client.trainer_id == current_user.id,
+        models.WorkoutPlan.is_active == True
+    ).first()
+
+    if not workout:
+        raise HTTPException(status_code=404, detail="workout plan no encontrado")
+    
+    workout.is_active = False
+    db.commit()
+
+    return {"detail": "Workout plan desactivado correctamente"}
+
+##########################################
+#PATCH /workout-plans/{workout_id}/restore
+##########################################
+
+@app.patch("/workout-plans/{workout_id}/restore", status_code=200)
+def restore_workout_plan(
+    workout_id: int,
+    current_user: models.Trainer = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    workout = db.query(models.WorkoutPlan).join(models.Client).filter(
+        models.WorkoutPlan.id == workout_id,
+        models.Client.trainer_id == current_user.id,
+        models.Client.is_active == True,
+        models.WorkoutPlan.is_active == False
+    ).first()
+
+    if not workout:
+        raise HTTPException(status_code=404, detail="Workout no encontrado")
+    
+    workout.is_active = True
+    db.commit()
+
+    return {"detail": "Workout reactivado correctamente"}
 

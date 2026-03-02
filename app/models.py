@@ -3,6 +3,11 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import func
 from .database import Base
 
+
+#######################################
+#Models relations Trainers>>Clients
+#######################################
+
 class Trainer(Base):
     __tablename__ = "trainers"
 
@@ -23,7 +28,28 @@ class Client(Base):
     age = Column(Integer)
     goal = Column(String)
     is_active = Column(Boolean, default=True, nullable=False)
-
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
     trainer_id = Column(Integer, ForeignKey("trainers.id"))
 
     trainer = relationship("Trainer", back_populates="clients")
+    workout_plans = relationship("WorkoutPlan", back_populates="client")
+
+###################################################
+#Models relations Trainer >> Clients >> WorkoutPlan
+###################################################
+
+class WorkoutPlan(Base):
+    __tablename__ = "workout_plans"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(String)
+    start_date = Column(DateTime(timezone=True), server_default=func.now())
+    end_date = Column(DateTime(timezone=True), nullable=True)
+
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    client = relationship("Client", back_populates="workout_plans") 
