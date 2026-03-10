@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from typing import List
 
 from ..database import get_db
@@ -19,7 +19,10 @@ def workout_plan(
     current_user: models.Trainer = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    workout = db.query(models.WorkoutPlan).join(models.Client).filter(
+    workout = db.query(models.WorkoutPlan).options(
+        selectinload(models.WorkoutPlan.days)
+        .selectinload(models.WorkoutDay.exercises)
+    ).join(models.Client).filter(
         models.WorkoutPlan.id == workout_id,
         models.Client.trainer_id == current_user.id,
         models.WorkoutPlan.is_active == True
@@ -92,10 +95,11 @@ def delete_workout(
     ).first()
 
     if not workout:
-        raise HTTPException(status_code=404, detail="workout plan no encontrado")
+        raise HTTPException(status_code=404, detail="workout plan not found")
     
     workout.is_active = False
     db.commit()
+    db.refresh(workout)
 
     return workout
 
