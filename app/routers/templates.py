@@ -45,7 +45,7 @@ def create_template_days(
     template = db.query(models.WorkoutTemplate).filter(
         models.WorkoutTemplate.id == template_id,
         models.WorkoutTemplate.trainer_id == current_user.id
-    ).first
+    ).first()
 
     if not template:
         raise HTTPException(status_code=404, detail="template not found")

@@ -4,6 +4,7 @@ from sqlalchemy import func
 from .database import Base
 
 
+
 #######################################
 #Models relations Trainers>>Clients
 #######################################

@@ -81,3 +81,15 @@ class WorkoutPlanResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class WorkoutSessionCreate(BaseModel):
+    workout_day_id: int
+
+class ExerciseLogCreate(BaseModel):
+    workout_session_id: int
+    workout_day_exercise_id: int
+    set_number: int
+    reps_done: int
+    weight_used: float
+    rpe: Optional[float] = None
+    rir: Optional[float] = None
