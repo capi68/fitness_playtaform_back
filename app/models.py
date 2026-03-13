@@ -145,6 +145,7 @@ class WorkoutDayExercise(Base):
     workout_day_id = Column(Integer, ForeignKey("workout_days.id"))
     exercise_id = Column(Integer, ForeignKey("exercises.id"))
 
+    logs = relationship("ExerciseLog", back_populates="workout_day_exercise", cascade="all, delete")
     workout_day = relationship("WorkoutDay", back_populates="exercises")
     exercise = relationship("Exercise")
 
@@ -179,4 +180,4 @@ class ExerciseLog(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     session = relationship("WorkoutSession", back_populates="logs")
-    
+    workout_day_exercise = relationship("WorkoutDayExercise", back_populates="logs")
