@@ -1,6 +1,7 @@
 from typing import List, Optional
 from pydantic import BaseModel, EmailStr, ConfigDict
 from datetime import datetime
+from enum import Enum
 
 ###################################
 #Schemas create Trainer and Clients
@@ -93,3 +94,68 @@ class ExerciseLogCreate(BaseModel):
     weight_used: float
     rpe: Optional[float] = None
     rir: Optional[float] = None
+
+##########################################
+#Schemas create workout days and exercise
+##########################################
+
+class workoutDayCreate(BaseModel):
+    name: str
+    order: int
+
+class WorkoutDayResponse(BaseModel):
+    id: int
+    name: str
+    order: int
+
+    class Config:
+        from_attributes = True
+
+
+class WorkoutDayExerciseCreate(BaseModel):
+    exercise_id: int
+    order: int
+    target_sets: int
+    target_reps: int
+    rest_seconds: int
+    notes: Optional[str] = None
+
+#############################
+#Schemas to create Exercises
+#############################
+
+class MuscleGroup(str, Enum):
+    chest = "chest"
+    back = "back"
+    quads = "quads"
+    hamstrings = "hamstrings"
+    glutes = "glutes"
+    calves = "calves"
+    shoulders = "shoulders"
+    biceps = "biceps"
+    triceps = "triceps"
+    core = "core"
+
+class ExerciseCreate(BaseModel):
+    name: str
+    description: str | None = None
+    video_url: str | None = None
+    muscle_group: MuscleGroup
+
+class ExerciseResponse(BaseModel):
+    id: int
+    name: str
+    description: str | None
+    video_url: str | None
+    muscle_group: MuscleGroup
+    is_active: bool
+
+    class config:
+        from_attributes = True
+
+class ExerciseUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    video_url: str | None = None
+    muscle_group: MuscleGroup | None = None
+

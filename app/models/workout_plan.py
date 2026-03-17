@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import func
 from ..database import Base
 
+
 ###################################################
 #Models relations Trainer >> Clients >> WorkoutPlan
 ###################################################

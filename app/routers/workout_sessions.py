@@ -75,7 +75,7 @@ def get_current_workout(
 ):
     workout = db.query(models.WorkoutPlan).join(models.Client).filter(
         models.WorkoutPlan.client_id == client_id,
-        models.Client.id == current_user.id
+        models.Client.trainer_id == current_user.id
     ).first()
 
     if not workout:
@@ -129,29 +129,4 @@ def get_workout_exercises(
         raise HTTPException(status_code=404, detail="Exercises not found")
     
     return exercises
-
-####################################
-#GET /workout-sessions/{session_id}
-####################################
-
-@router.get("/workout-sessions/{session_id}")
-def get_workout_session(
-    session_id: int,
-    current_user: models.Trainer = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    workout_session = (
-        db.query(models.WorkoutSession)
-        .join(models.Client)
-        .filter(
-            models.WorkoutSession.id == session_id,
-            models.Client.trainer_id == current_user.id
-        )
-        .first()
-    )
-    
-    if not workout_session:
-        raise HTTPException(status_code=404, detail="Workout session not found")
-    
-    return workout_session
 

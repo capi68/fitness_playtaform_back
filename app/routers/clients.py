@@ -38,13 +38,14 @@ def create_client(
 @router.get("/", response_model=List[schemas.ClientResponse])
 def get_my_clients(
     current_user: models.Trainer = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
     
 ): 
     clients = db.query(models.Client).filter(
         models.Client.trainer_id == current_user.id,
         models.Client.is_active == True
     ).all()
+    
     return clients
 
 ############################
@@ -167,7 +168,7 @@ def create_workout_plan(
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     
 
-    new_workpout_plan = models.WorkoutPlan(
+    new_workout_plan = models.WorkoutPlan(
         name=workout_plan.name,
         description=workout_plan.description,
         start_date=workout_plan.start_date,
@@ -175,11 +176,11 @@ def create_workout_plan(
         client_id=client_id
     )
 
-    db.add(new_workpout_plan)
+    db.add(new_workout_plan)
     db.commit()
-    db.refresh(new_workpout_plan)
+    db.refresh(new_workout_plan)
 
-    return new_workpout_plan
+    return new_workout_plan
 
 ########################################
 #GET /clients/{client_id}/workout-plans

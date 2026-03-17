@@ -8,6 +8,72 @@ from ..security import get_current_user
 
 router = APIRouter(prefix="/workout-plans", tags=["Workout Plans"])
 
+####################################
+#POST /workout-plans/{plan_id}/days
+####################################
+
+@router.post("/{plan_id}/days", response_model=schemas.WorkoutDayResponse, status_code=201)
+def create_workout_day(
+    plan_id: int,
+    day: schemas.workoutDayCreate,
+    current_user: models.Trainer = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    workout_plan = db.query(models.WorkoutPlan).join(models.Client).filter(
+        models.WorkoutPlan.id == plan_id,
+        models.Client.trainer_id == current_user.id,
+        models.WorkoutPlan.is_active == True
+    ).first()
+
+    if not workout_plan:
+        raise HTTPException(status_code=404, detail="Workout plan not found")
+
+    new_day = models.WorkoutDay(
+        workout_plan_id=plan_id,
+        name=day.name,
+        order=day.order
+    )
+
+    db.add(new_day)
+    db.commit()
+    db.refresh(new_day)
+
+    return new_day
+
+#######################################
+#POST /workout-days/{day_id}/exercises
+#######################################
+
+@router.post("/workout-days/{day_id}/exercises", status_code=201)
+def add_exercise_to_day(
+    day_id: int,
+    exercise: schemas.WorkoutDayExerciseCreate,
+    current_user: models.Trainer = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    day = db.query(models.WorkoutDay).join(models.WorkoutPlan).join(models.Client).filter(
+        models.WorkoutDay.id == day_id,
+        models.Client.trainer_id == current_user.id
+    ).first()
+
+    if not day:
+        raise HTTPException(status_code=404, detail="Workout day not found")
+
+    new_exercise = models.WorkoutDayExercise(
+        workout_day_id=day_id,
+        exercise_id=exercise.exercise_id,
+        order=exercise.order,
+        target_sets=exercise.target_sets,
+        target_reps=exercise.target_reps,
+        rest_seconds=exercise.rest_seconds,
+        notes=exercise.notes
+    )
+
+    db.add(new_exercise)
+    db.commit()
+    db.refresh(new_exercise)
+
+    return new_exercise
 
 ##################################
 #GET /workout-plans/{workout_id}
