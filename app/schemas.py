@@ -103,10 +103,30 @@ class workoutDayCreate(BaseModel):
     name: str
     order: int
 
+class ExerciseShort(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
+
+class WorkoutDayExerciseResponse(BaseModel):
+    id: int
+    order: int
+    exercise: ExerciseShort
+    target_sets: int
+    target_reps: int
+    rest_seconds: int
+    notes: str | None = None
+
+    class config:
+        from_attibutes = True
+
 class WorkoutDayResponse(BaseModel):
     id: int
     name: str
     order: int
+    exercises: list[WorkoutDayExerciseResponse]
 
     class Config:
         from_attributes = True
@@ -114,11 +134,11 @@ class WorkoutDayResponse(BaseModel):
 
 class WorkoutDayExerciseCreate(BaseModel):
     exercise_id: int
-    order: int
-    target_sets: int
-    target_reps: int
-    rest_seconds: int
-    notes: Optional[str] = None
+    order: int | None = None
+    target_sets: int | None = None
+    target_reps: int | None = None
+    rest_seconds: int | None = None
+    notes: str | None = None
 
 #############################
 #Schemas to create Exercises

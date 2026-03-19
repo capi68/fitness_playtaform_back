@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List
 
 from ..database import get_db
@@ -57,9 +58,21 @@ def new_exercise(
     current_user: models.Trainer = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    clean_name = exercise.name.strip()
+
+    existing = db.query(models.Exercise).filter(
+        models.Exercise.trainer_id == current_user.id,
+        func.lower(models.Exercise.name) == clean_name.lower(),
+        models.Exercise.is_active == True
+    ).first()
+
+    if existing:
+        raise HTTPException(status_code=400, detail="Exercise already exists")
+
     exercise = models.Exercise(
         **exercise.model_dump(),
-        trainer_id=current_user
+        name=clean_name,
+        trainer_id=current_user.id
     )
 
     db.add(exercise)

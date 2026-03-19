@@ -36,21 +36,21 @@ class WorkoutDay(Base):
     workout_plan_id = Column(Integer, ForeignKey("workout_plans.id"))
 
     workout_plan = relationship("WorkoutPlan", back_populates="days")
-    exercises = relationship("WorkoutDayExercise", back_populates="workout_day", cascade="all, delete")
+    exercises = relationship("WorkoutDayExercise", back_populates="workout_day", order_by="WorkoutDayExercise.order", cascade="all, delete")
 
 class WorkoutDayExercise(Base):
     __tablename__ = "workout_day_exercises"
 
     id = Column(Integer, primary_key=True)
-    order = Column(Integer)
+    order = Column(Integer, nullable=False)
 
-    target_sets = Column(Integer)
-    target_reps = Column(Integer)
-    rest_seconds = Column(Integer)
-    notes = Column(Text)
+    target_sets = Column(Integer, nullable=True)
+    target_reps = Column(Integer, nullable=True)
+    rest_seconds = Column(Integer, nullable=True)
+    notes = Column(Text, nullable=True)
 
-    workout_day_id = Column(Integer, ForeignKey("workout_days.id"))
-    exercise_id = Column(Integer, ForeignKey("exercises.id"))
+    workout_day_id = Column(Integer, ForeignKey("workout_days.id"), nullable=False)
+    exercise_id = Column(Integer, ForeignKey("exercises.id"), nullable=False)
 
     logs = relationship("ExerciseLog", back_populates="workout_day_exercise", cascade="all, delete")
     workout_day = relationship("WorkoutDay", back_populates="exercises")
